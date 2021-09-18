@@ -73,5 +73,5 @@ The only limitation that the bot has is that it's not an automatic reproduction 
 
 ## TODO
 - [] Remove the limitation
-- [] Automate the replacement of the variables `files1` and `files2`
+- [x] Automate the replacement of the variables `files1` and `files2`
 - [] Make a better READ.md
