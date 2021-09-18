@@ -1,4 +1,5 @@
 import os, json, glob
+import platform
 import discord
 import youtube_dl 
 from discord.ext import commands,tasks 
@@ -126,8 +127,14 @@ async def leave(ctx):
     else:
         await ctx.send("The bot is not connected to a voice channel.")
 
-    files1 = glob.glob('/path/to/bot/*.m4a')
-    files2 = glob.glob('/path/to/bot/*.webm')
+    path = os.getcwd()
+    
+    if platform.system() == 'Linux':
+        files1 = glob.glob(path+'/*.m4a')
+        files2 = glob.glob(path+'/*.webm')
+    else:
+        files1 = glob.glob(path+'\*.m4a')
+        files2 = glob.glob(path+'\*.webm')
     
     for i in files1:
         try:
@@ -145,19 +152,19 @@ async def leave(ctx):
 async def play(ctx, value):
     await join(ctx)
     if is_url(value):
+        name = url_to_title(value)
         try:
             server = ctx.message.guild
             voice_channel = server.voice_client    
             if not voice_channel.is_playing():
                 async with ctx.typing():
-                    filename = await YTDLSource.from_url(value, loop=bot.loop)
-                    name = url_to_title(value)[1]
+                    filename = await YTDLSource.from_url(name[0], loop=bot.loop)
                     voice_channel.play(discord.FFmpegPCMAudio(executable='ffmpeg', source=filename))
-                if name != '0':
-                    await ctx.send('**Now playing:** {}'.format(name))
+                if name[1] != '0':
+                    await ctx.send('**Now playing:** {}'.format(name[1]))
             else:
                 songs.append(value)
-                await ctx.send('{} was queued to the list'.format(url_to_title(value)[1]))
+                await ctx.send('{} was queued to the list'.format(name[1]))
         except:
             await ctx.send("The bot has found an error!") 
     else:
@@ -244,7 +251,7 @@ async def commands(ctx):
 
     > pause: This command pauses the song
 
-    > skip: Skip to the nth queued song
+    > skip n: Skip to the nth queued song
 
     > next: Plays the next song of the playlist
 
