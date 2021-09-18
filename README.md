@@ -64,7 +64,7 @@ python bot.py
 * Automatic removal of downloaded songs
 
 ### Limitation of the bot
-You have to tell the bot to play the next song with a command. It can't do it automatically _for now at least_
+You have to tell the bot to play the next song with a command. It can't do it automatically.
 
 ## References
 * The [examples](https://github.com/Rapptz/discord.py/tree/master/examples) and [documentation](https://discordpy.readthedocs.io/) of [discord.py](https://github.com/Rapptz/discord.py)
@@ -72,6 +72,5 @@ You have to tell the bot to play the next song with a command. It can't do it au
 * The basic/median information on this [link](https://realpython.com/how-to-make-a-discord-bot-python/#how-to-make-a-discord-bot-in-python)
 
 ## TODO
-- [] Remove the limitation
-~~- [x] Automate the replacement of the variables `files1` and `files2`~~
+- [] Fix the limitation
 - [] Make a better READ.md
