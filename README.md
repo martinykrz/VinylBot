@@ -64,7 +64,7 @@ python bot.py
 * Automatic removal of downloaded songs
 
 ### Limitation of the bot
-The only limitation that the bot has is that it's not an automatic reproduction of a queue of songs a.k.a you have to tell the bot to play the next song with a command
+You have to tell the bot to play the next song with a command. It can't do it automatically _for now at least_
 
 ## References
 * The [examples](https://github.com/Rapptz/discord.py/tree/master/examples) and [documentation](https://discordpy.readthedocs.io/) of [discord.py](https://github.com/Rapptz/discord.py)
@@ -73,5 +73,5 @@ The only limitation that the bot has is that it's not an automatic reproduction 
 
 ## TODO
 - [] Remove the limitation
-- [x] Automate the replacement of the variables `files1` and `files2`
+~~- [x] Automate the replacement of the variables `files1` and `files2`~~
 - [] Make a better READ.md
