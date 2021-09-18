@@ -46,14 +46,12 @@ $ pip install -U [library]
 ```
 
 ## How to get and use the bot
-1. Before use it, in the variables `files1` and `files2`, replace `\path\to\bot.py` with your path to the file bot.py. 
-Afte edit that, type in the terminal or in cmd
 ```
 git clone https://github.com/martinykrz/VinylBot.git
 cd VinylBot/
 ```
-2. Once you clone it, get the discord token following this [instructons](https://realpython.com/how-to-make-a-discord-bot-python/#how-to-make-a-discord-bot-in-python) adn edit in the the file `.env`, inside the variable `discord_token`
-3. Finally, you can type in the terminal or in cmd
+1. Once you clone it, get the discord token following this [instructons](https://realpython.com/how-to-make-a-discord-bot-python/#how-to-make-a-discord-bot-in-python) adn edit in the the file `.env`, inside the variable `discord_token`
+2. Finally, you can type in the terminal or in cmd
 ```
 python bot.py
 ```
