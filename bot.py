@@ -126,8 +126,8 @@ async def leave(ctx):
     else:
         await ctx.send("The bot is not connected to a voice channel.")
 
-    files1 = glob.glob('/home/martin/Documents/Python/Projects/Discord/*.m4a')
-    files2 = glob.glob('/home/martin/Documents/Python/Projects/Discord/*.webm')
+    files1 = glob.glob('/path/to/bot/*.m4a')
+    files2 = glob.glob('/path/to/bot/*.webm')
     
     for i in files1:
         try:
