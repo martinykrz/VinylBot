@@ -45,14 +45,20 @@ $ sudo pacman -S ffmpeg python python-pip
 $ pip install -U [library]
 ```
 
-## How to use it
-Before use it, in the variables `files1` and `files2`, replace `\path\to\bot.py` with your path to the file bot.py. 
-Once edit that, type in the terminal or in cmd
+## How to get and use the bot
+1. Before use it, in the variables `files1` and `files2`, replace `\path\to\bot.py` with your path to the file bot.py. 
+Afte edit that, type in the terminal or in cmd
 ```
-python \path\to\bot.py 
+git clone https://github.com/martinykrz/VinylBot.git
+cd VinylBot/
+```
+2. Once you clone it, get the discord token following this [instructons](https://realpython.com/how-to-make-a-discord-bot-python/#how-to-make-a-discord-bot-in-python) adn edit in the the file `.env`, inside the variable `discord_token`
+3. Finally, you can type in the terminal or in cmd
+```
+python bot.py
 ```
 
-## What it does?
+## What it does
 * Search and plays a song from Youtube
 * Pause, resume and stop music
 * Makes a queue when a song is playing
@@ -65,6 +71,7 @@ The only limitation that the bot has is that it's not an automatic reproduction 
 ## References
 * The [examples](https://github.com/Rapptz/discord.py/tree/master/examples) and [documentation](https://discordpy.readthedocs.io/) of [discord.py](https://github.com/Rapptz/discord.py)
 * This [StackOverflow question](https://stackoverflow.com/questions/60489888/how-to-use-a-key-words-instead-of-a-url-with-youtube-dl-and-discord-py)
+* The basic/median information on this [link](https://realpython.com/how-to-make-a-discord-bot-python/#how-to-make-a-discord-bot-in-python)
 
 ## TODO
 - [] Remove the limitation
