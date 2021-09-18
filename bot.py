@@ -245,7 +245,7 @@ async def commands(ctx):
 
     > leave: To make the bot leave the voice channel and erase junk
 
-    > play: To play song
+    > play url or name: To play song (name between quotation marks)
 
     > playlist: To see the queued songs
 
