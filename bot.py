@@ -239,7 +239,7 @@ async def stop(ctx):
 @bot.command(name='commands', description='Display the commands')
 async def commands(ctx):
     des = """
-    Commands of B.O.T, Prefix: $\n
+    Commands of VinylBot, Prefix: $\n
 
     > join: Tells the bot to join the voice channel
 
@@ -265,7 +265,7 @@ async def commands(ctx):
 
     """
     embed = discord.Embed(
-                title="I'm B.O.T, A SemiAutomatic Music Bot", 
+                title="I'm VinylBot, A SemiAutomatic Music Bot", 
                 description=des, 
                 color=discord.Color.random()
                 )
