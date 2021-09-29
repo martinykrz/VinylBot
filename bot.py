@@ -460,7 +460,7 @@ async def commands(ctx):
 
     > leave: To make the bot leave the voice channel and erase junk
 
-    > play url or name: To play song (name between quotation marks) from Youtube 
+    > play url or name: To play song from Youtube 
 
     > playlist: To see the queued songs from Youtube
 
