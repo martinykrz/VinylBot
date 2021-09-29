@@ -1,10 +1,14 @@
-import os, json, glob
+import os, sys, json, glob
+import subprocess
 import platform
 import discord
 import youtube_dl 
-from discord.ext import commands,tasks 
+from discord.ext import commands 
+from discord.utils import get 
 from dotenv import load_dotenv 
 from youtube_search import YoutubeSearch
+from spotdl import __main__ as spotdl 
+from tinytag import TinyTag
 
 load_dotenv()
 
@@ -16,7 +20,7 @@ bot = commands.Bot(command_prefix='$')
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
 
-##Music stuff##
+##<Music stuff>##
 
 youtube_dl.utils.bug_reports_message = lambda:''
 
@@ -38,13 +42,15 @@ ffmpeg_options = {
         'options': '-vn'
         }
 
-songs = []
+songs_yt = []
+
+songs_spot = []
 
 ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
 
 class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(self, source, *, data, volumen=0.5):
-        super().__init__(source, volumen) ##??
+        super().__init__(source, volumen) 
         self.data = data
         self.title = data.get('title')
         self.url = ''
@@ -56,38 +62,48 @@ class YTDLSource(discord.PCMVolumeTransformer):
         if 'entries' in data:
             # take first item from playlist
             data = data['entries'][0]
-        filename = data['title'] if stream else ytdl.prepare_filename(data) ##??
+        filename = data['title'] if stream else ytdl.prepare_filename(data) 
         return filename
 
-def title_to_url(track):
-    yt = YoutubeSearch(track, max_results=1).to_json()
-    try:
+def extract_info(track):
+    info = ('0', '0')
+    if not ('youtube.com' in track or 'youtu.be' in track):
+        yt = YoutubeSearch(track, max_results=1).to_json()
         yt_id = str(json.loads(yt)['videos'][0]['id'])
         url = 'https://www.youtube.com/watch?v=' + yt_id
         full_name = youtube_dl.YoutubeDL(ytdl_format_options).extract_info(url, download=False).get('title', None)
-        return (url, full_name) 
-    except:
-        pass
-        return ('0', '0')
+        info = (url, full_name) 
+    else:
+        full_name = youtube_dl.YoutubeDL(ytdl_format_options).extract_info(track, download=False).get('title', None)
+        info = (track, full_name)
+    return info
 
-def url_to_title(url):
-    try:
-        full_name = youtube_dl.YoutubeDL(ytdl_format_options).extract_info(url, download=False).get('title', None)
-        return (url, full_name)
-    except:
-        pass 
-        return ('0', '0')
+def mkLowerCase(value):
+    lst_value = list(value)
+    lwr = [x.lower() for x in lst_value]
+    for i in range(len(lwr)):
+        if lwr[i] == '_':
+            lwr[i] = ' '
+    res = ''
+    for x in lwr:
+        res += x
+    return res 
 
-def is_url(value):
-    standard = list('https://')
-    test = list(value)
-    while len(test) < len(standard):
-        test.append(" ")
-    n = 0
-    for i in range(len(standard)):
-        if standard[i] == test[i]:
-            n += 1
-    return n == len(standard)
+def mp3_files(value): 
+    all_the_files = os.listdir('./')
+    mp3 = []
+    lwr_value = mkLowerCase(value)
+    for file in all_the_files:
+        lwr_file = mkLowerCase(file)
+        if '.mp3' in file and lwr_value in lwr_file:
+            mp3.append(file)
+    return mp3
+
+def mp3_info(file_path):
+    tag = TinyTag.get(file_path)
+    return (tag.title, tag.artist)
+
+##</Music stuff>##
 
 ##<Debugging Commands>##
 
@@ -112,7 +128,7 @@ async def join(ctx):
     try:
         if not ctx.message.author.voice:
             await ctx.send("{} is not connected to a voice channel".format(ctx.message.author.name))
-            # return
+            return
         else:
             channel = ctx.message.author.voice.channel
         await channel.connect()
@@ -129,12 +145,14 @@ async def leave(ctx):
 
     path = os.getcwd()
     
-    if platform.system() == 'Linux':
+    if platform.system() == 'Linux' or platform.system() == 'Darwin':
         files1 = glob.glob(path+'/*.m4a')
         files2 = glob.glob(path+'/*.webm')
+        files3 = glob.glob(path+'/*.mp3')
     else:
         files1 = glob.glob(path+'\*.m4a')
         files2 = glob.glob(path+'\*.webm')
+        files3 = glob.glob(path+'\*.mp3')
     
     for i in files1:
         try:
@@ -148,93 +166,290 @@ async def leave(ctx):
         except OSError as e:
             print("Error: %s : %s" % (f, e.strerror))
 
+    for k in files3:
+        try:
+            os.unlink(k)
+        except OSError as e:
+            print("Error: %s : %s" % (f, e.strerror))
+
 @bot.command(name='play', description='To play song')
 async def play(ctx, value):
     await join(ctx)
-    if is_url(value):
-        name = url_to_title(value)
-        try:
-            server = ctx.message.guild
-            voice_channel = server.voice_client    
-            if not voice_channel.is_playing():
-                async with ctx.typing():
-                    filename = await YTDLSource.from_url(name[0], loop=bot.loop)
-                    voice_channel.play(discord.FFmpegPCMAudio(executable='ffmpeg', source=filename))
-                if name[1] != '0':
-                    await ctx.send('**Now playing:** {}'.format(name[1]))
-            else:
-                songs.append(value)
-                await ctx.send('{} was queued to the list'.format(name[1]))
-        except:
-            await ctx.send("The bot has found an error!") 
-    else:
-        url = title_to_url(value)
-        try:
-            server = ctx.message.guild
-            voice_channel = server.voice_client 
-            if not voice_channel.is_playing():
-                async with ctx.typing():
-                    if url[0] != '0':
-                        filename = await YTDLSource.from_url(url[0], loop=bot.loop)
-                        voice_channel.play(discord.FFmpegPCMAudio(executable='ffmpeg', source=filename))
-                    else:
-                        raise ValueError
-                if url[1] != '0':
-                    await ctx.send('**Now playing:** {}'.format(url[1]))
-            else:
-                songs.append(value)
-                await ctx.send('{} was queued to the list'.format(url[1]))
-        except:
-            await ctx.send("The bot has found an error!") 
+    info = extract_info(value)
 
-@bot.command(name='playlist', description='To see the queued songs')
-async def playlist(ctx):
-    await ctx.send(songs)
+    def keep_rolling():
+        if len(songs_yt) != 0:
+            voice = get(bot.voice_clients, guild=ctx.guild)
+            filename = songs_yt[0]
+            songs_yt.pop(0)
+            voice.play(discord.FFmpegPCMAudio(source=filename), after=lambda n : keep_rolling())
 
-@bot.command(name='pause', description='This command pauses the song')
+    try:
+        server = ctx.message.guild
+        voice_channel = server.voice_client 
+        if not voice_channel.is_playing():
+            async with ctx.typing():
+                voice = get(bot.voice_clients, guild=ctx.guild)
+                filename = await YTDLSource.from_url(info[0], loop=bot.loop)
+                voice.play(discord.FFmpegPCMAudio(source=filename), after=lambda n: keep_rolling())
+            if info[1] != '0':
+                embed = discord.Embed(
+                        title='**Now playing:**',
+                        description=info[1],
+                        color=discord.Color.green()
+                        )
+                await ctx.send(embed=embed)
+        else:
+            filename = await YTDLSource.from_url(info[0], loop=bot.loop)
+            songs_yt.append(filename)
+            embed = discord.Embed(
+                    title='Queue:',
+                    description='{} was queued to the list'.format(info[1]),
+                    color=discord.Color.greyple()
+                    )
+            await ctx.send(embed=embed)
+    except:
+        embed = discord.Embed(
+                title='Error!',
+                description='The bot has found an error!',
+                color=discord.Color.dark_red()
+                )
+        await ctx.send(embed=embed)
+
+@bot.command(name='splay', description='Play music from Spotify')
+async def splay(ctx, value):
+    await join(ctx)
+
+    def keep_spot_rolling():
+        if len(songs_spot) != 0:
+            voice = get(bot.voice_clients, guild=ctx.guild)
+            subprocess.check_call([sys.executable, spotdl.__file__, songs_spot[0]])
+            filename = mp3_files(songs_spot[0])[0]
+            songs_spot.pop(0)
+            voice.play(discord.FFmpegPCMAudio(source=filename), after=lambda n : keep_spot_rolling())
+
+    try:
+        server = ctx.message.guild
+        voice_client = server.voice_client 
+        if not voice_client.is_playing():
+            async with ctx.typing():
+                try:
+                    subprocess.check_call([sys.executable, spotdl.__file__, value])
+                    voice = get(bot.voice_clients, guild=ctx.guild)
+                    filename = mp3_files(value)[0]
+                    voice.play(discord.FFmpegPCMAudio(source=filename), after=lambda n : keep_spot_rolling())
+                except:
+                    pass
+                    voice = get(bot.voice_clients, guild=ctx.guild)
+                    filename = mp3_files(value)[0]
+                    voice_client.play(discord.FFmpegPCMAudio(source=filename))
+            info = mp3_info(os.getcwd()+'/'+mp3_files(value)[0])
+            embed = discord.Embed(
+                    title='**Now playing:**',
+                    description='{0} from {1}'.format(info[0], info[1]),
+                    color=discord.Color.green()
+                    )
+            await ctx.send(embed=embed)
+            # os.unlink(os.getcwd()+'/'+mp3_files()[0])
+        else:
+            songs_spot.append(value)
+            embed = discord.Embed(
+                    title='Queue:',
+                    description='{} was queued to the list'.format(value),
+                    color=discord.Color.greyple()
+                )
+            await ctx.send(embed=embed)
+    except:
+        embed = discord.Embed(
+                title='Error!',
+                description='The bot has found an error!',
+                color=discord.Color.dark_red()
+                )
+        await ctx.send(embed=embed)
+
+@bot.command(name='pause', description='Pauses the song')
 async def pause(ctx):
     voice_client = ctx.message.guild.voice_client
     if voice_client.is_playing():
         voice_client.pause()
-        await ctx.send("Pause music.")
+        embed = discord.Embed(
+                title='Pause song',
+                color=discord.Color.dark_gold()
+                )
+        await ctx.send(embed=embed)
     else:
-        await ctx.send("The bot is not playing anything at the moment.")
+        embed = discord.Embed(
+                    title='Error!',
+                    description='The bot is not playing anything at the moment',
+                    color=discord.Color.dark_red()
+                    )
+        await ctx.send(embed=embed)
 
-@bot.command(name='skip', description='Skip to the nth queued song')
-async def skip(ctx, n: int):
+@bot.command(name='goto', description='Go to the nth queued song')
+async def goto(ctx, n: int):
     voice_client = ctx.message.guild.voice_client 
-    if len(songs) > 0 or voice_client.is_playing():
+    if len(songs_yt) > 0 or voice_client.is_playing():
         voice_client.stop()
         try:
-            await play(ctx, songs[n])
-            songs.pop(n)
+            if n != 0:
+                embed = discord.Embed(
+                        title='Going to the ' + str(n) + 'th song',
+                        color=discord.Color.dark_magenta()
+                        )
+                await ctx.send(embed=embed)
+                await play(ctx, songs_yt[n])
+                songs_yt.pop(n)
+            else:
+                embed = discord.Embed(
+                        title='Skip song',
+                        color=discord.Color.dark_magenta()
+                        )
+                await ctx.send(embed=embed)
+                await play(ctx, songs_yt[0])
+                songs_yt.pop(0)
         except:
-            await ctx.send("The bot found an error!")
+            embed = discord.Embed(
+                    title='Error!',
+                    description='The bot found an error!',
+                    color=discord.Color.dark_red()
+                    )
+            await ctx.send(embed=embed)
 
-@bot.command(name='next', description='Plays the next song of the playlist')
-async def next(ctx):
-    await skip(ctx, 0)
+@bot.command(name='skip', description='Plays the next song of the playlist')
+async def skip(ctx):
+    await goto(ctx, 0)
+
+@bot.command(name='sgoto', description='Go to the nth queued song from Spotify')
+async def sgoto(ctx, n: int):
+    voice_client = ctx.message.guild.voice_client 
+    if len(songs_spot) > 0 or voice_client.is_playing():
+        voice_client.stop()
+        try:
+            if n != 0:
+                embed = discord.Embed(
+                        title='Going to the ' + str(n) + 'th song',
+                        color=discord.Color.dark_magenta()
+                        )
+                await ctx.send(embed=embed)
+                await splay(ctx, songs_spot[n])
+                songs_spot.pop(n)
+            else:
+                embed = discord.Embed(
+                        title='Skip song',
+                        color=discord.Color.dark_magenta()
+                        )
+                await ctx.send(embed=embed)
+                await splay(ctx, songs_spot[0])
+                songs_spot.pop(0)
+        except:
+            embed = discord.Embed(
+                    title='Error!',
+                    description='The bot found an error!',
+                    color=discord.Color.dark_red()
+                    )
+            await ctx.send(embed=embed)
+
+@bot.command(name='sskip', description='Plays the next song of the playlist from Spotify')
+async def sskip(ctx):
+    await sgoto(ctx, 0)
+
 
 @bot.command(name='resume', description='Resumes the song')
 async def resume(ctx):
     voice_client = ctx.message.guild.voice_client
     if voice_client.is_paused():
         voice_client.resume()
-        await ctx.send("Resume music.")
+        embed = discord.Embed(
+                title='Resume music',
+                color=discord.Color.green()
+                )
+        await ctx.send(embed=embed)
     else:
-        await ctx.send("The bot was not playing anything at the moment.")
+        embed = discord.Embed(
+                title='Error!',
+                description='The bot was not playing anything at the moment',
+                color=discord.Color.dark_red()
+                )
+        await ctx.send(embed=embed)
 
 @bot.command(name='stop', description='Stops the current song')
 async def stop(ctx):
     voice_client = ctx.message.guild.voice_client
     if voice_client.is_playing():
         voice_client.stop()
-        await ctx.send("Stop music.")
-    elif len(songs) > 0:
-        await play(ctx, songs[0])
-        songs.pop(0)
+        embed = discord.Embed(
+                title='Stop music',
+                color=discord.Color.purple()
+                )
+        await ctx.send(embed=embed)
+        if len(songs_yt) > 0:
+            await play(ctx, songs_yt[0])
+            songs_yt.pop(0)
     else:
-        await ctx.send("The bot is not playing anything at the moment.")
+        embed = discord.Embed(
+                title='Error!',
+                description='The bot was not playing anything at the moment',
+                color=discord.Color.dark_red()
+                )
+        await ctx.send(embed=embed)
+
+@bot.command(name='sstop', description='Stops the current song from Spotify')
+async def sstop(ctx):
+    voice_client = ctx.message.guild.voice_client
+    if voice_client.is_playing():
+        voice_client.stop()
+        embed = discord.Embed(
+                title='Stop music',
+                color=discord.Color.purple()
+                )
+        await ctx.send(embed=embed)
+        if len(songs_spot) > 0:
+            await splay(ctx, songs_spot[0])
+            songs_spot.pop(0)
+    else:
+        embed = discord.Embed(
+                title='Error!',
+                description='The bot was not playing anything at the moment',
+                color=discord.Color.dark_red()
+                )
+        await ctx.send(embed=embed)
+
+@bot.command(name='playlist', description='To see the queued songs')
+async def playlist(ctx):
+    infoPlay = """ 
+    
+    """    
+    for i in range(len(songs_yt)):
+        infoPlay += '**[' + str(i) + ']**' + """ = {},\n"""
+
+    infoPlay = infoPlay.format(*songs_yt)
+
+    embed = discord.Embed(
+            title='Playlist',
+            description=infoPlay,
+            color=discord.Color.blue()
+            )
+    
+    await ctx.send(embed=embed)
+
+@bot.command(name='splaylist', description='To see Spotify queued songs')
+async def splaylist(ctx):
+    infoPlay = """ 
+    
+    """    
+    for i in range(len(songs_spot)):
+        infoPlay += '**[' + str(i) + ']**' + """ = {},\n"""
+
+    infoPlay = infoPlay.format(*songs_spot)
+
+    embed = discord.Embed(
+            title='Spotify Playlist',
+            description=infoPlay,
+            color=discord.Color.blue()
+            )
+    
+    await ctx.send(embed=embed)
+
 
 @bot.command(name='commands', description='Display the commands')
 async def commands(ctx):
@@ -245,15 +460,15 @@ async def commands(ctx):
 
     > leave: To make the bot leave the voice channel and erase junk
 
-    > play url or name: To play song (name between quotation marks)
+    > play url or name: To play song (name between quotation marks) from Youtube 
 
-    > playlist: To see the queued songs
+    > playlist: To see the queued songs from Youtube
 
     > pause: This command pauses the song
 
-    > skip n: Skip to the nth queued song
+    > goto n: Go to the nth queued song
 
-    > next: Plays the next song of the playlist
+    > skip: Plays the next song of the playlist
 
     > resume: Resumes the song
 
@@ -261,13 +476,27 @@ async def commands(ctx):
 
     > commands: Display the commands\n
 
-    Made with love and Python
+    Spotify exclusive commands: \n
+
+    > splay name: Same as play but from Spotify (be specific with the name, or else don't work)
+
+    > splaylist: Same as playlist but with songs from Spotify
+
+    > sgoto n: Go to the nth queued song from Spotify
+
+    > sskip: Plays the next song of the playlist from Spotify
+
+    > sstop: Stops the current song from Spotify\n
+
+    Made with love and Python\n
+
+    Source Code: https://github.com/martinykrz/VinylBot 
 
     """
     embed = discord.Embed(
-                title="I'm VinylBot, A SemiAutomatic Music Bot", 
+                title="I'm VinylBot, A Music Bot", 
                 description=des, 
-                color=discord.Color.random()
+                color=discord.Color.blue()
                 )
 
     await ctx.send(embed=embed)
