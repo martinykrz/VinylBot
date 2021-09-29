@@ -173,7 +173,7 @@ async def leave(ctx):
             print("Error: %s : %s" % (f, e.strerror))
 
 @bot.command(name='play', description='To play song')
-async def play(ctx, value):
+async def play(ctx, value: str):
     await join(ctx)
     info = extract_info(value)
 
@@ -217,7 +217,7 @@ async def play(ctx, value):
         await ctx.send(embed=embed)
 
 @bot.command(name='splay', description='Play music from Spotify')
-async def splay(ctx, value):
+async def splay(ctx, value: str):
     await join(ctx)
 
     def keep_spot_rolling():
