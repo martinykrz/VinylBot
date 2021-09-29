@@ -9,20 +9,23 @@ Very basic music discord bot
 
 2. Libraries
     * os
+    * sys
+    * glob
     * json
     * discord.py
     * "discord.py[voice]"
     * python-dotenv
+    * spotdl
+    * tinytag
     * youtube-dl
     * youtube-search
 
-## How to install the dependecies
+## Install the dependecies
 
 ### Windows 
-* To install the ffmpeg library in Windows, use the [link](https://windowsloop.com/install-ffmpeg-windows-10/) and follow the instructions
-* To install python, use this [link](https://www.python.org/downloads/), download the .exe file and choose the recommended (if you don't know what you doing) or the custom one (select the option to install pip); don't forget to check the "Add to PATH Python3.x"
-* If you installed python like the preview item, you may already have pip. To check if you have it, type in cmd `pip -V` and it will give you something like `pip 20.x.y ...`; else download this [file](https://bootstrap.pypa.io/get-pip.py) and type in cmd `python C:\path\to\get-pip.py`
-* To install the libraries, type in cmd `pip install -U [library]` 
+* [Instructions to install ffmpeg on Windows and add it to PATH](https://windowsloop.com/install-ffmpeg-windows-10/)
+* [Download the python executable and add it to PATH](https://www.python.org/downloads/)
+* If you don't have pip installed, download this [file](https://bootstrap.pypa.io/get-pip.py) and type in cmd `python get-pip.py`
 
 ### Linux
 
@@ -30,19 +33,27 @@ Very basic music discord bot
 ```
 $ sudo apt update 
 $ sudo apt install python3 ffmpeg python3-pip
-$ pip install -U [library]
 ```
 
 ### Fedora
 ``` 
 $ sudo dnf install ffmpeg python3 python3-pip
-$ pip install -U [library]
 ```
 
 ### Arch
 ```
 $ sudo pacman -S ffmpeg python python-pip
-$ pip install -U [library]
+```
+
+## Install the libraries
+
+### Windows
+Execute `libs.bat`
+
+### Linux
+```
+$ chmod +x libs.sh
+$ ./libs.sh
 ```
 
 ## How to get and use the bot
@@ -50,27 +61,35 @@ $ pip install -U [library]
 git clone https://github.com/martinykrz/VinylBot.git
 cd VinylBot/
 ```
-1. Once you clone it, get the discord token following this [instructons](https://realpython.com/how-to-make-a-discord-bot-python/#how-to-make-a-discord-bot-in-python) adn edit in the the file `.env`, inside the variable `discord_token`
+1. Once you clone it, get the discord token following this [instructons](https://realpython.com/how-to-make-a-discord-bot-python/#how-to-make-a-discord-bot-in-python) and edit in the the file `.env`, inside the variable `discord_token`
 2. Finally, you can type in the terminal or in cmd
 ```
 python bot.py
 ```
 
 ## What it does
-* Search and plays a song from Youtube
+* Search and plays song from Youtube and Spotify
 * Pause, resume and stop music
-* Makes a queue when a song is playing
+* Queue songs 
 * Skip to the nth queued song
 * Automatic removal of downloaded songs
 
-### Limitation of the bot
-You have to tell the bot to play the next song with a command. It can't do it automatically.
+### Limitation of the Spotify
+Be specific with the songs name, otherwise it wouldn't play and send you and error. 
+E.g
+```
+$splay "lets groove tonight" -> Error
+$splay "let's groove tinight" -> Plays normaly
+```
 
-## References
+## TODO
+- [x] Fix the limitation of queuing
+- [] Fix Spotify limitation
+- [] Make a better READ.md
+
+## Thanks for make it possible
 * The [examples](https://github.com/Rapptz/discord.py/tree/master/examples) and [documentation](https://discordpy.readthedocs.io/) of [discord.py](https://github.com/Rapptz/discord.py)
 * This [StackOverflow question](https://stackoverflow.com/questions/60489888/how-to-use-a-key-words-instead-of-a-url-with-youtube-dl-and-discord-py)
 * The basic/median information on this [link](https://realpython.com/how-to-make-a-discord-bot-python/#how-to-make-a-discord-bot-in-python)
+* The inspiration to fix the automatic playing of queued songs on this [repo](https://github.com/Penguin1212/Discord-Bot-BotSpud)
 
-## TODO
-- [] Fix the limitation
-- [] Make a better READ.md
