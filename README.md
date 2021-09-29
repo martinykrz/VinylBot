@@ -20,7 +20,7 @@ Very basic music discord bot
     * youtube-dl
     * youtube-search
 
-## Install the dependecies
+## Install the programs
 
 ### Windows 
 * [Instructions to install ffmpeg on Windows and add it to PATH](https://windowsloop.com/install-ffmpeg-windows-10/)
