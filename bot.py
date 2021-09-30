@@ -322,16 +322,16 @@ async def goto(ctx, f: str, n: int):
                             color=discord.Color.dark_magenta()
                             )
                     await ctx.send(embed=embed)
-                    await play(ctx, f, songs_spot[n])
-                    songs_spot.pop(n)
+                    # await play(ctx, f, songs_spot[n])
+                    # songs_spot.pop(n)
                 else:
                     embed = discord.Embed(
                             title='Skip song',
                             color=discord.Color.dark_magenta()
                             )
                     await ctx.send(embed=embed)
-                    await play(ctx, f, songs_spot[0])
-                    songs_spot.pop(0)
+                    # await play(ctx, f, songs_spot[0])
+                    # songs_spot.pop(0)
             except:
                 embed = discord.Embed(
                         title='Error!',
@@ -443,7 +443,7 @@ async def commands(ctx):
 
     > leave: To make the bot leave the voice channel and erase junk
 
-    > play f url/name: To play song (name between quotation marks) from Youtube 
+    > play f url/name: To play song (name between quotation marks)  
 
     > playlist f: To see the queued songs from Youtube
 
