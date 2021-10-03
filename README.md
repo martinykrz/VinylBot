@@ -57,13 +57,10 @@ $ ./libs.sh
 ```
 
 ## How to get and use the bot
+[How to create a bot account and invite it](https://discordpy.readthedocs.io/en/stable/discord.html). Then edit variable `discord_token` with the token of your bot in `.env` file
 ```
 git clone https://github.com/martinykrz/VinylBot.git
 cd VinylBot/
-```
-1. Once you clone it, get the discord token following this [instructons](https://realpython.com/how-to-make-a-discord-bot-python/#how-to-make-a-discord-bot-in-python) and edit in the the file `.env`, inside the variable `discord_token`
-2. Finally, you can type in the terminal or in cmd
-```
 python bot.py
 ```
 
