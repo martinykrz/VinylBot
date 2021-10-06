@@ -16,7 +16,6 @@ Very basic music discord bot
     * "discord.py[voice]"
     * python-dotenv
     * spotdl
-    * tinytag
     * youtube-dl
     * youtube-search
 
@@ -65,23 +64,26 @@ python bot.py
 ```
 
 ## What it does
-* Search and plays song from Youtube and Spotify
+* Search and plays songs from Youtube and Spotify 
+* Spotify is search through YoutubeMusic
 * Pause, resume and stop music
 * Queue songs 
 * Skip to the nth queued song
 * Automatic removal of downloaded songs
 
-### Limitation of the Spotify
-Be specific with the songs name, otherwise it wouldn't play and send you and error. 
+### Limitation 
+You must differenciate if you want to search from Spotify or Youtube
 E.g
 ```
-$splay "lets groove tonight" -> Error
-$splay "let's groove tinight" -> Plays normaly
+$play y never gonna give you up -> Plays the song
+$play never gonna give you up -> Could lead to error
 ```
+Same thing but with URLs
 
 ## TODO
 - [x] Fix the limitation of queuing
-- [] Fix Spotify limitation
+- [x] Fix Spotify limitation
+- [] Fix Youtube/Spotify limitation
 - [] Make a better READ.md
 
 ## Thanks for make it possible
