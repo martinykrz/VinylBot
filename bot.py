@@ -1,5 +1,6 @@
 import os, sys, json, glob
 import subprocess
+import asyncio
 import platform
 import discord
 import youtube_dl 
@@ -7,12 +8,22 @@ from discord.ext import commands
 from discord.utils import get 
 from dotenv import load_dotenv 
 from youtube_search import YoutubeSearch
-from spotdl import __main__ as spotdl 
-from tinytag import TinyTag
+from spotdl.search import SpotifyClient  
+from spotdl.providers.metadata_provider import from_url as spotInfo
+from ytmusicapi import YTMusic
+# from tinytag import TinyTag
 
 load_dotenv()
 
 TOKEN = os.getenv('discord_token')
+
+CLIENT_ID = os.getenv('client_id')
+
+CLIENT_SECRET = os.getenv('client_secret')
+
+SpotifyClient.init(CLIENT_ID, CLIENT_SECRET, False)
+
+ytmusic = YTMusic()
 
 bot = commands.Bot(command_prefix='$')
 
@@ -56,65 +67,63 @@ class YTDLSource(discord.PCMVolumeTransformer):
     @classmethod
     async def from_url(cls, url, *, loop=None, stream=False):
         loop = loop or asyncio.get_event_loop() 
-        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream)) ##?
+        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream)) 
         if 'entries' in data:
             # take first item from playlist
             data = data['entries'][0]
         filename = data['title'] if stream else ytdl.prepare_filename(data) 
         return filename
 
-def extract_info(track):
-    info = ('0', '0')
+# def extractID(filename):
+#     temp = list(filename)
+#     r = []
+#     if '.m4a' in filename:
+#         for i in range(0, len(temp)-4):
+#             r.append(temp[i])
+#     elif '.webm' in filename:
+#         for j in range(0, len(temp)-5):
+#             r.append(temp[j])
+#     res = ''
+#     k = len(r)-1
+#     while r[k] != '-':
+#         res += r[k]
+#         k -= 1
+#     res = list(res)
+#     result = ''
+#     for n in range(len(res)-1, -1, -1):
+#         result += res[n]
+#     return result
+
+def make_Info(track, f='y'):
+    info = ('0', '0', '0')
     if not ('youtube.com' in track or 'youtu.be' in track):
-        yt = YoutubeSearch(track, max_results=1).to_json()
-        yt_id = str(json.loads(yt)['videos'][0]['id'])
-        url = 'https://www.youtube.com/watch?v=' + yt_id
-        full_name = youtube_dl.YoutubeDL(ytdl_format_options).extract_info(url, download=False).get('title', None)
-        info = (url, full_name) 
+        if f == 's':
+            print('===Downloading from Spotify===')
+            ytm = ytmusic.search(track, 'songs')[0]
+            ytm_id = ytm['videoId']
+            title = ytm['title']
+            artist = ytm['artists'][0]['name']
+            url = 'https://www.youtube.com/watch?v=' + ytm_id
+            info = (url, title, artist)
+        else:
+            yt = YoutubeSearch(track, max_results=1).to_json()
+            yt_id = str(json.loads(yt)['videos'][0]['id'])
+            yt_artist = str(json.loads(yt)['videos'][0]['channel'])
+            url = 'https://www.youtube.com/watch?v=' + yt_id
+            full_name = ytdl.extract_info(url, download=False).get('title', None)
+            info = (url, full_name, yt_artist) 
+    elif 'open.spotify.com' in track and 'track' in track:
+        title = spotInfo(track)[0]["name"] #First item from the search
+        ytm_id = ytmusic.search(title, 'songs')[0]['videoId']
+        ytm_artist = ytmusic.search(title, 'songs')[0]['artists'][0]['name']
+        url = 'https://www.youtube.com/watch?v=' + ytm_id
+        info = (url, title, ytm_artist)
     else:
-        full_name = youtube_dl.YoutubeDL(ytdl_format_options).extract_info(track, download=False).get('title', None)
-        info = (track, full_name)
+        full_name = ytdl.extract_info(track, download=False).get('title', None)
+        yt = YoutubeSearch(track, max_results=1).to_json()
+        artist = str(json.loads(yt)['videos'][0]['channel'])
+        info = (track, full_name, artist)
     return info
-
-def mkLowerCase(value):
-    lst_value = list(value)
-    lwr = [x.lower() for x in lst_value]
-    for i in range(len(lwr)):
-        if lwr[i] == '_':
-            lwr[i] = ' '
-    res = ''
-    for x in lwr:
-        res += x
-    return res 
-
-def mp3_files(value): 
-    all_the_files = os.listdir('./')
-    mp3 = ''
-    lwr_value = mkLowerCase(value)
-    for file in all_the_files:
-        lwr_file = mkLowerCase(file)
-        if '.mp3' in file and lwr_value in lwr_file:
-            mp3 = file
-    return mp3
-
-def mp3_info(file_path):
-    tag = TinyTag.get(file_path)
-    return (tag.title, tag.artist)
-
-def first_track(values, f):
-    res = -1
-    for x in values:
-        if x[1] == f:
-            res = values.index(x)
-            break
-    return res 
-
-# def queue(values, f):
-#     i = 0
-#     for x in values:
-#         if x[1] == f:
-#             i += 1
-#     return (i == 0 and first_track(values, f) >= 0)
 
 ##</Music stuff>##
 
@@ -139,6 +148,11 @@ async def argument(ctx, *, args):
 @bot.command(name='raw', description='Send the raw list')
 async def raw(ctx):
     await ctx.send(songs)
+
+@bot.command(name='file', description='Send a text file')
+async def file(ctx, *, args):
+    file = discord.File(args)
+    await ctx.send(file=file)
 
 ##</Debugging Commands>##
 
@@ -169,11 +183,9 @@ async def leave(ctx):
     if platform.system() == 'Linux' or platform.system() == 'Darwin':
         files1 = glob.glob(path+'/*.m4a')
         files2 = glob.glob(path+'/*.webm')
-        files3 = glob.glob(path+'/*.mp3')
     else:
         files1 = glob.glob(path+'\*.m4a')
         files2 = glob.glob(path+'\*.webm')
-        files3 = glob.glob(path+'\*.mp3')
     
     for i in files1:
         try:
@@ -187,114 +199,69 @@ async def leave(ctx):
         except OSError as e:
             print("Error: %s : %s" % (f, e.strerror))
 
-    for k in files3:
-        try:
-            os.unlink(k)
-        except OSError as e:
-            print("Error: %s : %s" % (f, e.strerror))
-
 @bot.command(name='play', description='To play song')
-# async def play(ctx, f='y', *, value):
 async def play(ctx, f='y', *, value):
     await join(ctx)
-    if f == 'y':
-        info = extract_info(value)
+    info = make_Info(value, f)
 
-        def keep_rolling():
-            # if len(songs_yt) != 0:
-            if len(songs) != 0:
+    def keep_rolling():
+        if len(songs) != 0:
+            voice = get(bot.voice_clients, guild=ctx.guild)
+            channel = get(ctx.guild.text_channels, name=ctx.message.channel.name)
+            filename = songs[0]
+            songs.pop(0)
+            # file_id = extractID(filename)
+            # url = 'https://www.youtube.com/watch?v=' + file_id
+            # info = make_Info(url)
+            # embed = discord.Embed(
+            #             title='**Now playing:**',
+            #             description='{} by {}'.format(info[1], info[2]),
+            #             color=discord.Color.green()
+            #             )
+            # coro = channel.send(embed=embed)
+            coro = channel.send(filename)
+            fut = asyncio.run_coroutine_threadsafe(coro, bot.loop)
+            try:
+                fut.result()
+            except:
+                pass
+            voice.play(discord.FFmpegPCMAudio(source=filename), after=lambda n : keep_rolling())
+
+    try:
+        server = ctx.message.guild
+        voice_channel = server.voice_client 
+        if not voice_channel.is_playing():
+            async with ctx.typing():
                 voice = get(bot.voice_clients, guild=ctx.guild)
-                filename = songs[first_track(songs, f)]
-                songs.pop(first_track(songs, f))
-                voice.play(discord.FFmpegPCMAudio(source=filename), after=lambda n : keep_rolling())
-
-        try:
-            server = ctx.message.guild
-            voice_channel = server.voice_client 
-            if not voice_channel.is_playing():
-                async with ctx.typing():
-                    voice = get(bot.voice_clients, guild=ctx.guild)
-                    print('===Downloading {}==='.format(info[1]))
-                    filename = await YTDLSource.from_url(info[0], loop=bot.loop)
-                    print('===Done===')
-                    voice.play(discord.FFmpegPCMAudio(source=filename), after=lambda n: keep_rolling())
-                if info[1] != '0':
-                    embed = discord.Embed(
-                            title='**Now playing:**',
-                            description=info[1],
-                            color=discord.Color.green()
-                            )
-                    await ctx.send(embed=embed)
-            else:
                 print('===Downloading {}==='.format(info[1]))
                 filename = await YTDLSource.from_url(info[0], loop=bot.loop)
                 print('===Done===')
-                track = (filename, f)
-                songs.append(track)
-                # songs_yt.append(filename)
-                embed = discord.Embed(
-                        title='Queue:',
-                        description='{} was queued to the list'.format(info[1]),
-                        color=discord.Color.greyple()
-                        )
-                await ctx.send(embed=embed)
-        except:
-            embed = discord.Embed(
-                    title='Error!',
-                    description='The bot has found an error!',
-                    color=discord.Color.dark_red()
-                    )
-            await ctx.send(embed=embed)
-    elif f == 's':
-        def keep_spot_rolling():
-            # if len(songs_spot) != 0:
-            if len(songs) != 0:
-                temp = first_track(songs, f)[0]
-                voice = get(bot.voice_clients, guild=ctx.guild)
-                subprocess.check_call([sys.executable, spotdl.__file__, temp])
-                filename = mp3_files(songs[temp])
-                songs.pop(temp)
-                voice.play(discord.FFmpegPCMAudio(source=filename), after=lambda n : keep_spot_rolling())
-
-        try:
-            server = ctx.message.guild
-            voice_client = server.voice_client 
-            if not voice_client.is_playing():
-                async with ctx.typing():
-                    try:
-                        subprocess.check_call([sys.executable, spotdl.__file__, value])
-                        voice = get(bot.voice_clients, guild=ctx.guild)
-                        filename = mp3_files(value)
-                        voice.play(discord.FFmpegPCMAudio(source=filename), after=lambda n : keep_spot_rolling())
-                    except:
-                        pass
-                        voice = get(bot.voice_clients, guild=ctx.guild)
-                        filename = mp3_files(value)
-                        voice_client.play(discord.FFmpegPCMAudio(source=filename))
-                info = mp3_info(os.getcwd()+'/'+mp3_files(value))
+                voice.play(discord.FFmpegPCMAudio(source=filename), after=lambda n: keep_rolling())
+            if info[1] != '0':
                 embed = discord.Embed(
                         title='**Now playing:**',
-                        description='{0} by {1}'.format(info[0], info[1]),
+                        description='{} by {}'.format(info[1], info[2]),
                         color=discord.Color.green()
                         )
                 await ctx.send(embed=embed)
-                # os.unlink(os.getcwd()+'/'+mp3_files()[0])
-            else:
-                track = (value, f)
-                songs.append(track)
-                embed = discord.Embed(
-                        title='Queue:',
-                        description='{} was queued to the list'.format(value),
-                        color=discord.Color.greyple()
-                    )
-                await ctx.send(embed=embed)
-        except discord.errors.ClientException as e:
+        else:
+            print('===Downloading {}==='.format(info[1]))
+            filename = await YTDLSource.from_url(info[0], loop=bot.loop)
+            print('===Done===')
+            songs.append(filename)
             embed = discord.Embed(
-                    title='Error: {}!'.format(e),
-                    description='The bot has found an error!',
-                    color=discord.Color.dark_red()
+                    title='Queue:',
+                    description='{} was queued to the list'.format(info[1]),
+                    color=discord.Color.greyple()
                     )
             await ctx.send(embed=embed)
+    except:
+        embed = discord.Embed(
+                title='Error!',
+                description='The bot has found an error!',
+                color=discord.Color.dark_red()
+                )
+        await ctx.send(embed=embed)
 
 @bot.command(name='pause', description='Pauses the song')
 async def pause(ctx):
@@ -303,7 +270,6 @@ async def pause(ctx):
         voice_client.pause()
         embed = discord.Embed(
                 title='Pause song',
-                # description='{} was paused'.format(songs[0][0]),
                 color=discord.Color.dark_gold()
                 )
         await ctx.send(embed=embed)
@@ -322,7 +288,6 @@ async def skip(ctx):
         voice_client.stop()
         embed = discord.Embed(
                 title='Skip song',
-                # description='{} was skipped'.format(songs[0][0]),
                 color=discord.Color.purple()
                 )
         await ctx.send(embed=embed)
@@ -341,7 +306,6 @@ async def resume(ctx):
         voice_client.resume()
         embed = discord.Embed(
                 title='Resume music',
-                # description='Continue playing {}'.format(songs[0][0]),
                 color=discord.Color.green()
                 )
         await ctx.send(embed=embed)
@@ -356,8 +320,7 @@ async def resume(ctx):
 @bot.command(name='remove', description='Delete the nth queued song')
 async def remove(ctx, n: int):
     temp = ''
-    # if songs[n][1] == f:
-    temp = songs[n][0]
+    temp = songs[n]
     songs.pop(n)
     embed = discord.Embed(
             title='Song deleted',
@@ -372,9 +335,9 @@ async def playlist(ctx):
     
     """    
     for i in range(len(songs)):
-        infoPlay += '**[' + str(i) + ']**' + '**[' + '{}' + ']**' + """ = {},\n"""
+        infoPlay += '**[' + str(i) + ']**' + """ = {},\n"""
         
-    infoPlay = infoPlay.format(*songs[1], *songs[0])
+    infoPlay = infoPlay.format(*songs)
         
     embed = discord.Embed(
             title='Playlist',
@@ -423,3 +386,4 @@ async def commands(ctx):
 ##</Commands>##
 
 bot.run(TOKEN)
+
