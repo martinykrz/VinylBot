@@ -8,12 +8,7 @@ Very basic music discord bot
     * ffmpeg
 
 2. Libraries
-    * os
-    * sys
-    * glob
-    * json
     * discord.py
-    * "discord.py[voice]"
     * python-dotenv
     * spotdl
     * youtube-dl
