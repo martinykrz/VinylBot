@@ -74,25 +74,19 @@ class YTDLSource(discord.PCMVolumeTransformer):
         filename = data['title'] if stream else ytdl.prepare_filename(data) 
         return filename
 
-# def extractID(filename):
-#     temp = list(filename)
-#     r = []
-#     if '.m4a' in filename:
-#         for i in range(0, len(temp)-4):
-#             r.append(temp[i])
-#     elif '.webm' in filename:
-#         for j in range(0, len(temp)-5):
-#             r.append(temp[j])
-#     res = ''
-#     k = len(r)-1
-#     while r[k] != '-':
-#         res += r[k]
-#         k -= 1
-#     res = list(res)
-#     result = ''
-#     for n in range(len(res)-1, -1, -1):
-#         result += res[n]
-#     return result
+def extractName(filename):
+    temp = list(filename)
+    r = []
+    if '.m4a' in filename:
+        for i in range(0, len(temp)-4):
+            r.append(temp[i])
+    elif '.webm' in filename:
+        for j in range(0, len(temp)-5):
+            r.append(temp[j])
+    res = ''
+    for k in range(len(r)-11):
+        res += r[k]
+    return res
 
 def make_Info(track, f='y'):
     info = ('0', '0', '0')
@@ -210,16 +204,16 @@ async def play(ctx, f='y', *, value):
             channel = get(ctx.guild.text_channels, name=ctx.message.channel.name)
             filename = songs[0]
             songs.pop(0)
-            # file_id = extractID(filename)
+            file_title = extractName(filename)
             # url = 'https://www.youtube.com/watch?v=' + file_id
-            # info = make_Info(url)
-            # embed = discord.Embed(
-            #             title='**Now playing:**',
-            #             description='{} by {}'.format(info[1], info[2]),
-            #             color=discord.Color.green()
-            #             )
-            # coro = channel.send(embed=embed)
-            coro = channel.send(filename)
+            info = make_Info(url)
+            embed = discord.Embed(
+                        title='**Now playing:**',
+                        description='{} by {}'.format(info[1], info[2]),
+                        color=discord.Color.green()
+                        )
+            coro = channel.send(embed=embed)
+            # coro = channel.send(filename)
             fut = asyncio.run_coroutine_threadsafe(coro, bot.loop)
             try:
                 fut.result()
