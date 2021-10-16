@@ -66,19 +66,8 @@ python bot.py
 * Skip to the nth queued song
 * Automatic removal of downloaded songs
 
-### Limitation 
-You must differenciate if you want to search from Spotify or Youtube
-E.g
-```
-$play y never gonna give you up -> Plays the song
-$play never gonna give you up -> Could lead to error
-```
-Same thing but with URLs
-
 ## TODO
-- [x] Fix the limitation of queuing
-- [x] Fix Spotify limitation
-- [] Fix Youtube/Spotify limitation
+- [] Fix low download rate because youtube-dl
 - [] Make a better READ.md
 
 ## Thanks for make it possible
