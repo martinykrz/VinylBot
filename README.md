@@ -51,7 +51,7 @@ $ ./libs.sh
 ```
 
 ## How to get and use the bot
-[How to create a bot account and invite it](https://discordpy.readthedocs.io/en/stable/discord.html). Then edit variable `discord_token` with the token of your bot in `.env` file
+[Create a bot account and invite it](https://discordpy.readthedocs.io/en/stable/discord.html). Then edit variable `discord_token` with the token of your bot in `.env` file
 ```
 git clone https://github.com/martinykrz/VinylBot.git
 cd VinylBot/
