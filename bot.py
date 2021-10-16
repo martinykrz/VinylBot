@@ -11,7 +11,6 @@ from youtube_search import YoutubeSearch
 from spotdl.search import SpotifyClient  
 from spotdl.providers.metadata_provider import from_url as spotInfo
 from ytmusicapi import YTMusic
-# from tinytag import TinyTag
 
 load_dotenv()
 
@@ -25,7 +24,7 @@ SpotifyClient.init(CLIENT_ID, CLIENT_SECRET, False)
 
 ytmusic = YTMusic()
 
-bot = commands.Bot(command_prefix='$')
+bot = commands.Bot(command_prefix='-', case_insensitive=True)
 
 @bot.event
 async def on_ready():
@@ -74,6 +73,24 @@ class YTDLSource(discord.PCMVolumeTransformer):
         filename = data['title'] if stream else ytdl.prepare_filename(data) 
         return filename
 
+def filter_name_noise(track):
+    f = len(list('spotify'))
+    sample = list(track)
+    res = 0
+    for i in range(len(sample)):
+        tmp = ''
+        for j in range(i, f+i):
+            tmp += sample[j]
+        if tmp == 'spotify':
+            res = i
+            break
+    while res < len(sample):
+        sample.pop(res)
+    result = ''
+    for k in range(len(sample)):
+        result += sample[k]
+    return result
+
 def extractName(filename):
     temp = list(filename)
     r = []
@@ -88,10 +105,11 @@ def extractName(filename):
         res += r[k]
     return res
 
-def make_Info(track, f='y'):
+def make_Info(track):
     info = ('0', '0', '0')
     if not ('youtube.com' in track or 'youtu.be' in track):
-        if f == 's':
+        if 'spotify' in track and not 'open.' in track:
+            track = filter_name_noise(track)
             print('===Downloading from Spotify===')
             ytm = ytmusic.search(track, 'songs')[0]
             ytm_id = ytm['videoId']
@@ -135,15 +153,18 @@ async def playing_(ctx):
     else:
         await ctx.send("It's doing nothing")
 
-@bot.command(name='argument', description='Send a simple text')
-async def argument(ctx, *, args):
-    await ctx.send(args)
+@bot.command(name='arg', description='Send a simple text')
+async def arg(ctx, *, args):
+    embed = discord.Embed(
+            description='This is a test, {}'.format(args)
+            )
+    await ctx.send(embed=embed)
 
 @bot.command(name='raw', description='Send the raw list')
 async def raw(ctx):
     await ctx.send(songs)
 
-@bot.command(name='file', description='Send a text file')
+@bot.command(name='f', description='Send a text file')
 async def file(ctx, *, args):
     file = discord.File(args)
     await ctx.send(file=file)
@@ -193,10 +214,10 @@ async def leave(ctx):
         except OSError as e:
             print("Error: %s : %s" % (f, e.strerror))
 
-@bot.command(name='play', description='To play song')
-async def play(ctx, f='y', *, value):
+@bot.command(name='p', description='To play song from Youtube')
+async def play(ctx, *, value):
     await join(ctx)
-    info = make_Info(value, f)
+    info = make_Info(value)
 
     def keep_rolling():
         if len(songs) != 0:
@@ -204,9 +225,9 @@ async def play(ctx, f='y', *, value):
             channel = get(ctx.guild.text_channels, name=ctx.message.channel.name)
             filename = songs[0]
             songs.pop(0)
-            file_title = extractName(filename)
+            file_title= extractName(filename)
             # url = 'https://www.youtube.com/watch?v=' + file_id
-            info = make_Info(url)
+            info = make_Info(file_title)
             embed = discord.Embed(
                         title='**Now playing:**',
                         description='{} by {}'.format(info[1], info[2]),
@@ -228,8 +249,9 @@ async def play(ctx, f='y', *, value):
             async with ctx.typing():
                 voice = get(bot.voice_clients, guild=ctx.guild)
                 print('===Downloading {}==='.format(info[1]))
+                timer = time.time() 
                 filename = await YTDLSource.from_url(info[0], loop=bot.loop)
-                print('===Done===')
+                print('===Done in {} s==='.format(round(time.time()-timer, 2)))
                 voice.play(discord.FFmpegPCMAudio(source=filename), after=lambda n: keep_rolling())
             if info[1] != '0':
                 embed = discord.Embed(
@@ -240,8 +262,9 @@ async def play(ctx, f='y', *, value):
                 await ctx.send(embed=embed)
         else:
             print('===Downloading {}==='.format(info[1]))
+            timer = time.time()
             filename = await YTDLSource.from_url(info[0], loop=bot.loop)
-            print('===Done===')
+            print('===Done in {} s==='.format(round(time.time() - timer, 2)))
             songs.append(filename)
             embed = discord.Embed(
                     title='Queue:',
@@ -344,13 +367,13 @@ async def playlist(ctx):
 @bot.command(name='commands', description='Display the commands')
 async def commands(ctx):
     des = """
-    Commands of VinylBot, Prefix: $, f: Y/s (youtube/spotify)\n
+    Commands of VinylBot, Prefix: -\n
 
     > join: Tells the bot to join the voice channel
 
     > leave: To make the bot leave the voice channel and erase junk
 
-    > play f url/name: To play song   
+    > play url/name: To play song (add 'spotify' to search from Spotify) 
 
     > playlist: To see the queued songs 
 
