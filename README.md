@@ -11,7 +11,7 @@ Very basic music discord bot
     * discord.py
     * python-dotenv
     * spotdl
-    * youtube-dl
+    * yt-dlp
     * youtube-search
 
 ## Install the programs
@@ -60,14 +60,13 @@ python bot.py
 
 ## What it does
 * Search and plays songs from Youtube and Spotify 
-* Spotify is search through YoutubeMusic
 * Pause, resume and stop music
 * Queue songs 
 * Skip to the nth queued song
 * Automatic removal of downloaded songs
 
 ## TODO
-- [] Fix low download rate because youtube-dl
+- [x] Fix low download rate because youtube-dl
 - [] Make a better READ.md
 
 ## Thanks for make it possible
