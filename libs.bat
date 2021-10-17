@@ -1,5 +1,5 @@
 pip install subprocess
-pip install youtube-dl
+pip install yt-dlp
 pip install -U discord.py
 pip install -U "discord.py[voice]"
 pip install python-dotenv
