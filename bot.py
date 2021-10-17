@@ -3,7 +3,7 @@ import subprocess
 import asyncio
 import platform
 import discord
-import youtube_dl 
+import yt_dlp
 from discord.ext import commands 
 from discord.utils import get 
 from dotenv import load_dotenv 
@@ -32,7 +32,7 @@ async def on_ready():
 
 ##<Music stuff>##
 
-youtube_dl.utils.bug_reports_message = lambda:''
+yt_dlp.utils.bug_reports_message = lambda:''
 
 ytdl_format_options = {
         'format': 'bestaudio/best',
@@ -54,7 +54,7 @@ ffmpeg_options = {
 
 songs = []
 
-ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
+ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
 
 class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(self, source, *, data, volumen=0.5):
@@ -84,8 +84,13 @@ def filter_name_noise(track):
         if tmp == 'spotify':
             res = i
             break
-    while res < len(sample):
-        sample.pop(res)
+    if res != 0;
+        while res < len(sample):
+            sample.pop(res)
+    else:
+        while res <= f:
+            sample.pop(0)
+            res += 1
     result = ''
     for k in range(len(sample)):
         result += sample[k]
@@ -373,7 +378,7 @@ async def commands(ctx):
 
     > leave: To make the bot leave the voice channel and erase junk
 
-    > play url/name: To play song (add 'spotify' to search from Spotify) 
+    > (p)lay url/name: To play song (add 'spotify' to search from Spotify) 
 
     > playlist: To see the queued songs 
 
