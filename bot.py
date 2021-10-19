@@ -84,7 +84,7 @@ def filter_name_noise(track):
         if tmp == 'spotify':
             res = i
             break
-    if res != 0;
+    if res != 0:
         while res < len(sample):
             sample.pop(res)
     else:
