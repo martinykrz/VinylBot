@@ -1,9 +1,10 @@
-import os, sys, json, glob
+import os, sys, json, glob, time 
 import subprocess
 import asyncio
 import platform
 import discord
 import yt_dlp
+import traceback
 from discord.ext import commands 
 from discord.utils import get 
 from dotenv import load_dotenv 
@@ -278,6 +279,7 @@ async def play(ctx, *, value):
                     )
             await ctx.send(embed=embed)
     except:
+        print(traceback.format_exc())
         embed = discord.Embed(
                 title='Error!',
                 description='The bot has found an error!',
