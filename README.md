@@ -42,12 +42,12 @@ $ sudo pacman -S ffmpeg python python-pip
 ## Install the libraries
 
 ### Windows
-Execute `libs.bat`
+Execute `windowsLibs.bat`
 
 ### Linux
 ```
-$ chmod +x libs.sh
-$ ./libs.sh
+$ chmod +x linuxLibs.sh
+$ ./linuxLibs.sh
 ```
 
 ## How to get and use the bot
@@ -67,6 +67,7 @@ python bot.py
 
 ## TODO
 - [x] Fix low download rate because youtube-dl
+- [] No songs plays on Windows
 - [] Make a better READ.md
 
 ## Thanks for make it possible
