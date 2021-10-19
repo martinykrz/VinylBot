@@ -2,7 +2,7 @@
 
 echo "===Installing==="
 
-libs='subprocess yt-dlp discord.py discord.py[voice] python-dotenv spotdl youtube-search platform'
+libs='yt-dlp discord.py discord.py[voice] python-dotenv spotdl youtube-search'
 
 for pkg in $libs
 do 
