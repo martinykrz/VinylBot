@@ -67,7 +67,7 @@ python bot.py
 
 ## TODO
 - [x] Fix low download rate because youtube-dl
-- [] No songs plays on Windows
+- [x] No songs plays on Windows. *Maybe is the ffmpeg version*
 - [] Make a better READ.md
 
 ## Thanks for make it possible
