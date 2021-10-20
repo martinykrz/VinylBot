@@ -373,8 +373,8 @@ async def playlist(ctx):
 
 @bot.command(name='commands', description='Display the commands')
 async def commands(ctx):
-    des = """
-    Commands of VinylBot, Prefix: -\n
+    des = f"""
+    Commands of {bot.user.name}, Prefix: -\n
 
     > join: Tells the bot to join the voice channel
 
@@ -400,7 +400,7 @@ async def commands(ctx):
 
     """
     embed = discord.Embed(
-                title="I'm VinylBot, A Music Bot", 
+                title=f"I'm {bot.user.name}, A Music Bot", 
                 description=des, 
                 color=discord.Color.blue()
                 )
