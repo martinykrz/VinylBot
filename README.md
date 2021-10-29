@@ -6,6 +6,7 @@ Very basic music discord bot
     * python
     * pip
     * ffmpeg
+    * [Microsoft Visual Studio C++ Build Tools](https://aka.ms/vs/17/release/VC_redist.x64.exe) *Only for Windows*
 
 2. Libraries
     * discord.py
@@ -39,24 +40,14 @@ $ sudo dnf install ffmpeg python3 python3-pip
 $ sudo pacman -S ffmpeg python python-pip
 ```
 
-## Install the libraries
-
-### Windows
-Execute `windowsLibs.bat`
-
-### Linux
-```
-$ chmod +x linuxLibs.sh
-$ ./linuxLibs.sh
-```
-
-## How to get and use the bot
-[Create a bot account and invite it](https://discordpy.readthedocs.io/en/stable/discord.html). Then edit variable `discord_token` with the token of your bot in `.env` file
-```
-git clone https://github.com/martinykrz/VinylBot.git
-cd VinylBot/
-python bot.py
-```
+## Install libraries and get started
+1. [Create a bot account and invite it](https://discordpy.readthedocs.io/en/stable/discord.html). 
+2. Clone this repo or download the zip file and uncompress it.
+3. Execute the file
+    - If you have Windows: open cmd or powershell, go to the file and execute `winInstallBot.bat` file
+    - If you have Linux: open the terminal, go to the file and type `chmod +x linuxInstallBot.sh && ./linuxInstallBot.sh`
+4. When `Discord Token: ` appears, copy the token created in the first step, paste it and press `Enter`
+5. Once completed, you can use the bot by executing the `StartBot.bat` file on Windows or the `StartBot.sh` file on Linux in the similar way as the third step
 
 ## What it does
 * Search and plays songs from Youtube and Spotify 
@@ -67,7 +58,6 @@ python bot.py
 
 ## TODO
 - [x] Fix low download rate because youtube-dl
-- [x] No songs plays on Windows. *Maybe is the ffmpeg version*
 - [] Make a better READ.md
 
 ## Thanks for make it possible
