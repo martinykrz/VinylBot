@@ -211,14 +211,14 @@ async def leave(ctx):
     for i in files1:
         try:
             os.unlink(i)
-        except OSError as e:
-            print("Error: %s : %s" % (f, e.strerror))
+        except:
+            print(traceback.format_exc())
 
     for j in files2:
         try:
             os.unlink(j)
-        except OSError as e:
-            print("Error: %s : %s" % (f, e.strerror))
+        except:
+            print(traceback.format_exc())
 
 @bot.command(name='p', description='To play song from Youtube')
 async def play(ctx, *, value):
@@ -254,10 +254,10 @@ async def play(ctx, *, value):
         if not voice_channel.is_playing():
             async with ctx.typing():
                 voice = get(bot.voice_clients, guild=ctx.guild)
-                print('===Downloading {}==='.format(info[1]))
+                print('=== Downloading {} ==='.format(info[1]))
                 timer = time.time() 
                 filename = await YTDLSource.from_url(info[0], loop=bot.loop)
-                print('===Done in {} s==='.format(round(time.time()-timer, 2)))
+                print('=== Done in {} s ==='.format(round(time.time()-timer, 2)))
                 voice.play(discord.FFmpegPCMAudio(source=filename), after=lambda n: keep_rolling())
             if info[1] != '0':
                 embed = discord.Embed(
@@ -267,10 +267,10 @@ async def play(ctx, *, value):
                         )
                 await ctx.send(embed=embed)
         else:
-            print('===Downloading {}==='.format(info[1]))
+            print('=== Downloading {} ==='.format(info[1]))
             timer = time.time()
             filename = await YTDLSource.from_url(info[0], loop=bot.loop)
-            print('===Done in {} s==='.format(round(time.time() - timer, 2)))
+            print('=== Done in {} s ==='.format(round(time.time() - timer, 2)))
             songs.append(filename)
             embed = discord.Embed(
                     title='Queue:',
@@ -371,7 +371,7 @@ async def playlist(ctx):
         
     await ctx.send(embed=embed)
 
-@bot.command(name='commands', description='Display the commands')
+@bot.command(name='h', description='Display the commands')
 async def commands(ctx):
     des = f"""
     Commands of {bot.user.name}, Prefix: -\n
@@ -380,7 +380,7 @@ async def commands(ctx):
 
     > leave: To make the bot leave the voice channel and erase junk
 
-    > (p)lay url/name: To play song (add 'spotify' to search from Spotify) 
+    > p url/name: To play song (add 'spotify' to search from Spotify) 
 
     > playlist: To see the queued songs 
 
@@ -392,7 +392,7 @@ async def commands(ctx):
 
     > remove n: Delete the nth song from the queue 
 
-    > commands: Display the commands\n
+    > h: Display the commands\n
 
     Made with love and Python\n
 
