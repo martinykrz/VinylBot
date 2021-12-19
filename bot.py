@@ -111,6 +111,15 @@ def extractName(filename):
         res += r[k]
     return res
 
+# Makes sure that the url doesn't get extra info
+def get_VideoID(track):
+    temp = list(track)
+    equal_index = temp.index('=')
+    video_id = ''
+    for i in range(equal_index+1, equal_index+12):
+        video_id += temp[i]
+    return video_id 
+
 def make_Info(track):
     info = ('0', '0', '0')
     if not ('youtube.com' in track or 'youtu.be' in track):
@@ -137,8 +146,11 @@ def make_Info(track):
         url = 'https://www.youtube.com/watch?v=' + ytm_id
         info = (url, title, ytm_artist)
     else:
+        ytID = get_VideoID(track)
+        track = 'https://www.youtube.com/watch?v=' + ytID 
         full_name = ytdl.extract_info(track, download=False).get('title', None)
         yt = YoutubeSearch(track, max_results=1).to_json()
+        # Channel in the url
         artist = str(json.loads(yt)['videos'][0]['channel'])
         info = (track, full_name, artist)
     return info
@@ -211,14 +223,14 @@ async def leave(ctx):
     for i in files1:
         try:
             os.unlink(i)
-        except:
-            print(traceback.format_exc())
+        except OSError as e:
+            print("Error: %s : %s" % (f, e.strerror))
 
     for j in files2:
         try:
             os.unlink(j)
-        except:
-            print(traceback.format_exc())
+        except OSError as e:
+            print("Error: %s : %s" % (f, e.strerror))
 
 @bot.command(name='p', description='To play song from Youtube')
 async def play(ctx, *, value):
@@ -254,10 +266,10 @@ async def play(ctx, *, value):
         if not voice_channel.is_playing():
             async with ctx.typing():
                 voice = get(bot.voice_clients, guild=ctx.guild)
-                print('=== Downloading {} ==='.format(info[1]))
+                print('===Downloading {}==='.format(info[1]))
                 timer = time.time() 
                 filename = await YTDLSource.from_url(info[0], loop=bot.loop)
-                print('=== Done in {} s ==='.format(round(time.time()-timer, 2)))
+                print('===Done in {} s==='.format(round(time.time()-timer, 2)))
                 voice.play(discord.FFmpegPCMAudio(source=filename), after=lambda n: keep_rolling())
             if info[1] != '0':
                 embed = discord.Embed(
@@ -267,10 +279,10 @@ async def play(ctx, *, value):
                         )
                 await ctx.send(embed=embed)
         else:
-            print('=== Downloading {} ==='.format(info[1]))
+            print('===Downloading {}==='.format(info[1]))
             timer = time.time()
             filename = await YTDLSource.from_url(info[0], loop=bot.loop)
-            print('=== Done in {} s ==='.format(round(time.time() - timer, 2)))
+            print('===Done in {} s==='.format(round(time.time() - timer, 2)))
             songs.append(filename)
             embed = discord.Embed(
                     title='Queue:',
@@ -353,7 +365,7 @@ async def remove(ctx, n: int):
             )
     await ctx.send(embed=embed)
 
-@bot.command(name='playlist', description='To see the queued songs')
+@bot.command(name='q', description='To see the queued songs')
 async def playlist(ctx):
     infoPlay = """ 
     
@@ -382,7 +394,7 @@ async def commands(ctx):
 
     > p url/name: To play song (add 'spotify' to search from Spotify) 
 
-    > playlist: To see the queued songs 
+    > q: To see the queued songs 
 
     > pause: Pauses the song
 
