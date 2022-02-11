@@ -111,15 +111,6 @@ def extractName(filename):
         res += r[k]
     return res
 
-# Makes sure that the url doesn't get extra info
-def get_VideoID(track):
-    temp = list(track)
-    equal_index = temp.index('=')
-    video_id = ''
-    for i in range(equal_index+1, equal_index+12):
-        video_id += temp[i]
-    return video_id 
-
 def make_Info(track):
     info = ('0', '0', '0')
     if not ('youtube.com' in track or 'youtu.be' in track):
@@ -146,11 +137,8 @@ def make_Info(track):
         url = 'https://www.youtube.com/watch?v=' + ytm_id
         info = (url, title, ytm_artist)
     else:
-        ytID = get_VideoID(track)
-        track = 'https://www.youtube.com/watch?v=' + ytID 
         full_name = ytdl.extract_info(track, download=False).get('title', None)
         yt = YoutubeSearch(track, max_results=1).to_json()
-        # Channel in the url
         artist = str(json.loads(yt)['videos'][0]['channel'])
         info = (track, full_name, artist)
     return info
