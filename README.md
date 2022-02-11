@@ -9,7 +9,7 @@ Very basic music discord bot
     * [Microsoft Visual Studio C++ Build Tools](https://aka.ms/vs/17/release/VC_redist.x64.exe) *Only for Windows*
 
 2. Libraries
-    * discord.py
+    * py-cord 
     * python-dotenv
     * spotdl
     * yt-dlp
