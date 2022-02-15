@@ -1,11 +1,11 @@
-#Install On Linux
+# Install On Linux
 
 ## Programs To Install
 * ffmpeg
 * python 
 * pip
 
-###Examples
+### Examples
 #### Debian/Ubuntu
 ```
 $ sudo apt install python3 ffmpeg python3-pip
