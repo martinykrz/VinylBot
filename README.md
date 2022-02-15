@@ -2,8 +2,8 @@
 Very basic music discord bot 
 
 ## Install Dependecies
-* [Windows Method](https://github.com/martinykrz/VinyBot/blob/main/WindowsInstall.md).
-* [Linux Method](https://github.com/martinykrz/VinyBot/blob/main/LinuxInstall.md).
+* [Windows Method](https://github.com/martinykrz/VinylBot/blob/main/WindowsInstall.md).
+* [Linux Method](https://github.com/martinykrz/VinylBot/blob/main/LinuxInstall.md).
 
 ## Install libraries and get started
 1. [Create a bot account and invite it](https://discordpy.readthedocs.io/en/stable/discord.html). 
