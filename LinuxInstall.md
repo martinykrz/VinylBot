@@ -30,7 +30,7 @@ or
 ```
 $ pip3 install -r requests.txt
 ```
-python packages:
+* python packages:
     * discord.py 
     * python-dotenv
     * spotdl
