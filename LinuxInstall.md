@@ -21,7 +21,7 @@ $ sudo dnf install ffmpeg python3 python3-pip
 $ sudo pacman -S ffmpeg python python-pip
 ```
 
-##Python packages
+## Python packages
 Once installed, type in the terminal
 ```
 $ pip install -r requests.txt
