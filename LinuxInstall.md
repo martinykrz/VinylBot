@@ -30,10 +30,4 @@ or
 ```
 $ pip3 install -r requests.txt
 ```
-* python packages:
-    * discord.py 
-    * python-dotenv
-    * spotdl
-    * yt-dlp
-    * youtube-search
 
