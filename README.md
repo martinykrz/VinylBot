@@ -19,7 +19,6 @@ Very basic music discord bot
 * Automatic removal of downloaded songs
 
 ## TODO
-- [x] Fix low download rate because youtube-dl
 - [] Enable Spotify Playlist and Custom Playlist
 - [] Replace discord.py with py-cord
 - [] Make a better READ.md
