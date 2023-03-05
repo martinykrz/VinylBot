@@ -1,0 +1,6 @@
+discord.py
+pynacl
+spotdl
+yt-dlp
+youtube-search
+ytmusicapi
