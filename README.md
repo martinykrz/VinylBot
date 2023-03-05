@@ -21,3 +21,4 @@ Very basic music discord bot
 * Create playlist from text file
 * Store favorites songs
 * Text-To-Speach (tts)
+* Make it more simple (if possible)
