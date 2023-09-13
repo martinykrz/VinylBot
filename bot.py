@@ -54,12 +54,14 @@ class YTDLSource(discord.PCMVolumeTransformer):
             # take first item from playlist
             data = data['entries'][0]
         filename = data['title'] if stream else music.ytdl.prepare_filename(data) 
-        if platform == "win32":
-            os.system(f"move {filename} %Temp%\{filename}")
-            filename = f"%Temp%\{filename}"
-        else:
+        if platform != "win32":
             os.system(f"mv {filename} /tmp/{filename}")
             filename = f"/tmp/{filename}"
+        else:
+            if not os.path.exists("songs"):
+                os.mkdir("songs")
+            os.system(f"move {filename} songs\{filename}")
+            filename = f"songs\{filename}"
         return filename
 
 ##</Music stuff>##
@@ -143,6 +145,17 @@ async def leave(ctx):
         await voice_client.disconnect()
     else:
         await ctx.send("The bot is not connected to a voice channel.")
+    if platform == "win32":
+        for root, _, files in os.walk("songs", topdown=False):
+            for file in files:
+                file_path = os.path.join(root, file)
+                while True:
+                    try:
+                        os.remove(file_path)
+                        break
+                    except:
+                        continue
+        os.rmdir("songs")
 
 @bot.command(name='play', description='Plays song', aliases=["p"])
 async def play(ctx, *, value: str = commands.parameter(description="URL, Name, Name + spotify")):
