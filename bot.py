@@ -1,12 +1,14 @@
 #!/usr/bin/env python
-import os 
+import os
 import asyncio
 import discord
 import traceback
 from sys import platform
-from discord.ext import commands 
+from discord.ext import commands
 from discord.ext import tasks
-from discord.utils import get 
+from discord.utils import get
+from gtts import gTTS
+
 from music import Music 
 
 #TOKEN = 'your_token'
@@ -221,6 +223,15 @@ async def local(ctx, *, value: str = commands.parameter(description=".mp3, .mp4,
     filename = value
     voice.play(discord.FFmpegPCMAudio(source=filename))
 
+@bot.commnad(name='tts', description='Text To Speech')
+async def TTS(ctx, *, value: str):
+    await join(ctx)
+    voice = get(bot.voice_clients, guild=ctx.guild)
+    tts = gTTS(value, lang="es")
+    filename = f"/tmp/{value.replace(' ', '_')}.mp3" if platform != "win32" else f"songs\{value.replace(' ', '_')}.mp3"
+    tts.save(filename)
+    voice.play(discord.FFmpegPCMAudio(filename))
+
 # @bot.command(name='l', description='To play playlists from Spotify or custom')
 # async def playlist(ctx, *, value):
 #     await join(ctx)
@@ -236,8 +247,8 @@ async def local(ctx, *, value: str = commands.parameter(description=".mp3, .mp4,
 @bot.command(name="song", description='Changes the status of the song', hidden=True)
 async def song(ctx, value : str):
     voice_client = ctx.message.guild.voice_client
-    txt : str = ''
-    des : str = ''
+    txt: str = ''
+    des: str = ''
     color = discord.Color
     if voice_client.is_playing():
         match value:
