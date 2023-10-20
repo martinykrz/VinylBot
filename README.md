@@ -17,8 +17,8 @@ Very basic music discord bot
 4. To start the bot type `python bot.py` or `python3 bot.py`
 
 ## TODO
-* Spotify playlist support
-* Create playlist from text file
-* Store favorites songs
-* Text-To-Speach (tts)
-* Make it more simple (if possible)
+* [ ] Spotify playlist support
+* [ ] Create playlist from text file
+* [ ] Store favorites songs
+* [x] Text-To-Speach (tts)
+* [ ] Make it more simple (if possible)
