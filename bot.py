@@ -227,7 +227,8 @@ async def local(ctx, *, value: str = commands.parameter(description=".mp3, .mp4,
 async def TTS(ctx, *, value: str):
     await join(ctx)
     voice = get(bot.voice_clients, guild=ctx.guild)
-    tts = gTTS(value, lang="es")
+    author = ctx.author
+    tts = gTTS(f"{author.global_name} dice: {value}", lang="es")
     filename = f"/tmp/{value.replace(' ', '_')}.mp3" if platform != "win32" else f"songs\{value.replace(' ', '_')}.mp3"
     tts.save(filename)
     voice.play(discord.FFmpegPCMAudio(filename))
