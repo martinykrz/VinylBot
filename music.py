@@ -1,18 +1,11 @@
 #!/usr/bin/env python
-
-#TODO 
-
-import os
-import json 
-import yt_dlp 
-import subprocess
+import os, json, yt_dlp, subprocess
 from youtube_search import YoutubeSearch
 from ytmusicapi import YTMusic
 from spotdl.utils.spotify import SpotifyClient
 from spotdl.types.song import Song
 
 class Music:
-
     def __init__(self):
         self.song = ''
         self.name = ''
@@ -37,7 +30,7 @@ class Music:
             'quiet': True,
             'no_warnings': True,
             'default_search': 'auto',
-            'source_address': '0.0.0.0', 
+            'source_address': '0.0.0.0',
             #bind to ipv4 since ipv6 addresses cause issues sometimes
         }
         
@@ -108,9 +101,9 @@ class Music:
         print(f"\x1b[1;32;40mName: {self.name} \x1b[0;0m")
         print(f"\x1b[1;32;40mFrom: {self.author} \x1b[0;0m")
         subprocess.run([
-            "mpv", 
-            "--no-video", 
-            "--volume=60", 
+            "mpv",
+            "--no-video",
+            "--volume=60",
             self.song
         ])
 
