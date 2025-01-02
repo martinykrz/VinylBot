@@ -5,3 +5,4 @@ spotdl
 yt-dlp
 youtube-search
 ytmusicapi
+audioop-lts
