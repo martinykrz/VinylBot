@@ -1,17 +1,23 @@
 #!/usr/bin/env python
 import os
+import json
+import yt_dlp
 import asyncio
 import discord
 import traceback
+import dotenv
+import argparse
 from sys import platform
 from discord.ext import commands
 from discord.ext import tasks
 from discord.utils import get
 from gtts import gTTS
+from youtube_search import YoutubeSearch
+from ytmusicapi import YTMusic
+from spotdl.utils.spotify import SpotifyClient
+from spotdl.types.song import Song
 
-from music import Music 
-
-#TOKEN = 'your_token'
+dotenv.load_dotenv()
 
 intents = discord.Intents.all()
 intents.members = True
@@ -31,6 +37,86 @@ async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
 
 ##<Music stuff>##
+
+class Music:
+    def __init__(self):
+        self.song = ''
+        self.name = ''
+        self.author = ''
+        self.path = "{}/Music/".format(os.path.expanduser("~"))
+        self.exit = False
+        #Spotify Client
+        client_id = 'adfb10751507481fbd3d75b2b1c36d9e'
+        client_secret = 'ac72e6687cd84568801bfe9c6709aa33'
+        
+        SpotifyClient.init(client_id, client_secret, False)
+        
+        self.ytmusic = YTMusic()
+        
+        ytdl_format_options = {
+            'format': 'bestaudio/best',
+            'restrictfilenames': True,
+            'noplaylist': True,
+            'nocheckcertificate': True,
+            'ignoreerrors': False,
+            'logtostderr': False,
+            'quiet': True,
+            'no_warnings': True,
+            'default_search': 'auto',
+            'source_address': '0.0.0.0', #bind to ipv4 since ipv6 addresses cause issues sometimes
+        }
+        
+        # Quiet yt-dlp
+        yt_dlp.utils.bug_reports_message = lambda:''
+        
+        self.ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
+    
+    def nameFilter(self):
+        if 'spotify' in self.song:
+            self.song = self.song[:len(list(self.song))-len(list(' spotify'))]
+        elif 'local' in self.song:
+            self.song = self.song[:len(list(self.song))-len(list(' local'))]
+        elif 'playlist' in self.song:
+            self.song = self.song[:len(list(self.song))-len(list(' playlist'))]
+
+    def normalSong(self):
+        if 'local' in self.song:
+            self.nameFilter()
+        else:
+            yt = YoutubeSearch(self.song, max_results=1).to_json()
+            self.song = 'https://www.youtube.com/watch?v=' + str(json.loads(yt)['videos'][0]['id'])
+            self.name = self.ytdl.extract_info(self.song, download=False).get('title', None)
+            self.author = str(json.loads(yt)['videos'][0]['channel'])
+
+    def spotifySong(self):
+        if 'track' in self.song:
+            self.name = Song.from_url(self.song).name
+            self.song = 'https://www.youtube.com/watch?v=' + ytmusic.search(self.name, 'songs')[0]['videoId']
+            self.author = self.ytmusic.search(title, 'songs')[0]['artists'][0]['name']
+        else:
+            self.nameFilter()
+            
+            ytm = self.ytmusic.search(self.song, 'songs')[0]
+            self.song = 'https://www.youtube.com/watch?v=' + ytm['videoId']
+            self.name = ytm['title']
+            self.author = ytm['artists'][0]['name']
+
+    def urlSong(self):
+        self.name = self.ytdl.extract_info(self.song, download=False).get('title', None)
+        self.author = str(json.loads(YoutubeSearch(self.name, max_results=1).to_json())['videos'][0]['channel'])
+
+    def makeTrack(self):
+        if 'spotify' in self.song:
+            self.spotifySong()
+        elif 'youtube.com' in self.song or 'youtu.be' in self.song:
+            self.urlSong()
+        else:
+            self.normalSong()
+
+    def songData(self, song):
+        self.song = song
+        self.makeTrack()
+        return self.song, self.name, self.author
 
 music = Music()
 
@@ -52,18 +138,22 @@ class YTDLSource(discord.PCMVolumeTransformer):
     async def from_url(cls, url, *, loop=None, stream=False):
         loop = loop or asyncio.get_event_loop() 
         data = await loop.run_in_executor(None, lambda: music.ytdl.extract_info(url, download=not stream)) 
+        
         if 'entries' in data:
             # take first item from playlist
             data = data['entries'][0]
+        
         filename = data['title'] if stream else music.ytdl.prepare_filename(data) 
+        
         if platform != "win32":
             os.system(f"mv {filename} /tmp/{filename}")
             filename = f"/tmp/{filename}"
         else:
             if not os.path.exists("songs"):
                 os.mkdir("songs")
-            os.system(f"move {filename} songs\{filename}")
-            filename = f"songs\{filename}"
+            
+            os.system(f"move {filename} songs\\{filename}")
+            filename = f"songs\\{filename}"
         return filename
 
 ##</Music stuff>##
@@ -147,6 +237,7 @@ async def leave(ctx):
         await voice_client.disconnect()
     else:
         await ctx.send("The bot is not connected to a voice channel.")
+    
     if platform == "win32":
         for root, _, files in os.walk("songs", topdown=False):
             for file in files:
@@ -157,6 +248,7 @@ async def leave(ctx):
                         break
                     except:
                         continue
+        
         os.rmdir("songs")
 
 @bot.command(name='play', description='Plays song', aliases=["p"])
@@ -177,10 +269,12 @@ async def play(ctx, *, value: str = commands.parameter(description="URL, Name, N
                         )
             coro = channel.send(embed=embed)
             fut = asyncio.run_coroutine_threadsafe(coro, bot.loop)
+            
             try:
                 fut.result()
             except:
                 pass
+            
             voice.play(discord.FFmpegPCMAudio(source=file[0]), after=lambda n : keep_rolling())
 
     try:
@@ -223,27 +317,15 @@ async def local(ctx, *, value: str = commands.parameter(description=".mp3, .mp4,
     filename = value
     voice.play(discord.FFmpegPCMAudio(source=filename))
 
-@bot.commnad(name='tts', description='Text To Speech')
+@bot.command(name='tts', description='Text To Speech')
 async def TTS(ctx, *, value: str):
     await join(ctx)
     voice = get(bot.voice_clients, guild=ctx.guild)
     author = ctx.author
     tts = gTTS(f"{author.global_name} dice: {value}", lang="es")
-    filename = f"/tmp/{value.replace(' ', '_')}.mp3" if platform != "win32" else f"songs\{value.replace(' ', '_')}.mp3"
+    filename = f"/tmp/{value.replace(' ', '_')}.mp3" if platform != "win32" else f"songs\\{value.replace(' ', '_')}.mp3"
     tts.save(filename)
     voice.play(discord.FFmpegPCMAudio(filename))
-
-# @bot.command(name='l', description='To play playlists from Spotify or custom')
-# async def playlist(ctx, *, value):
-#     await join(ctx)
-#     if 'playlist' in value and 'open.spotify' in value:
-#         pylist = playlistSpotify(value)
-#         for x in pylist:
-#             await play(ctx, value=x)
-#     elif 'album' in value and 'open.spotify' in value:
-#         abmlist = albumSpotify(value)
-#         for x in abmlist:
-#             await play(ctx, value=x)
 
 @bot.command(name="song", description='Changes the status of the song', hidden=True)
 async def song(ctx, value : str):
@@ -316,5 +398,15 @@ async def playlist(ctx):
 
 ##</Commands>##
 
-bot.run(TOKEN)
+parser = argparse.ArgumentParser()
+parser.add_argument("token", type=str)
+args = parser.parse_args()
+token: str = f"TOKEN_{args.token.upper()}"
 
+async def main():
+    try:
+        await bot.start(os.getenv(token))
+    except asyncio.CancelledError:
+        return None
+
+asyncio.run(main())
