@@ -9,7 +9,6 @@ import dotenv
 import argparse
 from sys import platform
 from discord.ext import commands
-from discord.ext import tasks
 from discord.utils import get
 from gtts import gTTS
 from youtube_search import YoutubeSearch
@@ -32,9 +31,16 @@ bot = commands.Bot(
         help_command=help_command
         )
 
+bot_name = ""
+
 @bot.event
 async def on_ready():
-    print(f'{bot.user.name} has connected to Discord!')
+    if bot.user is None:
+        raise Exception
+
+    bot_name = bot.user.name
+
+    print(f'{bot_name} has connected to Discord!')
 
 ##<Music stuff>##
 
@@ -85,14 +91,18 @@ class Music:
         else:
             yt = YoutubeSearch(self.song, max_results=1).to_json()
             self.song = 'https://www.youtube.com/watch?v=' + str(json.loads(yt)['videos'][0]['id'])
-            self.name = self.ytdl.extract_info(self.song, download=False).get('title', None)
+            self.name = self.ytdl.extract_info(self.song, download=False)
+            
+            if self.name is not None:
+                self.name = self.name.get('title', None)
+
             self.author = str(json.loads(yt)['videos'][0]['channel'])
 
     def spotifySong(self):
         if 'track' in self.song:
             self.name = Song.from_url(self.song).name
-            self.song = 'https://www.youtube.com/watch?v=' + ytmusic.search(self.name, 'songs')[0]['videoId']
-            self.author = self.ytmusic.search(title, 'songs')[0]['artists'][0]['name']
+            self.song = 'https://www.youtube.com/watch?v=' + self.ytmusic.search(self.name, 'songs')[0]['videoId']
+            self.author = self.ytmusic.search(self.name, 'songs')[0]['artists'][0]['name']
         else:
             self.nameFilter()
             
@@ -102,7 +112,13 @@ class Music:
             self.author = ytm['artists'][0]['name']
 
     def urlSong(self):
-        self.name = self.ytdl.extract_info(self.song, download=False).get('title', None)
+        self.name = self.ytdl.extract_info(self.song, download=False)
+
+        if self.name is not None:
+            self.name = self.name.get('title', None)
+        else:
+            self.name = ""
+
         self.author = str(json.loads(YoutubeSearch(self.name, max_results=1).to_json())['videos'][0]['channel'])
 
     def makeTrack(self):
@@ -139,11 +155,14 @@ class YTDLSource(discord.PCMVolumeTransformer):
         loop = loop or asyncio.get_event_loop() 
         data = await loop.run_in_executor(None, lambda: music.ytdl.extract_info(url, download=not stream)) 
         
+        if data is None:
+            raise RuntimeError
+
         if 'entries' in data:
             # take first item from playlist
             data = data['entries'][0]
         
-        filename = data['title'] if stream else music.ytdl.prepare_filename(data) 
+        filename = data['title'] if stream else music.ytdl.prepare_filename(data)
         
         if platform != "win32":
             os.system(f"mv {filename} /tmp/{filename}")
@@ -154,6 +173,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
             
             os.system(f"move {filename} songs\\{filename}")
             filename = f"songs\\{filename}"
+        
         return filename
 
 ##</Music stuff>##
@@ -191,7 +211,7 @@ async def file(ctx, *, args):
 @bot.command(name='debug', description='Show debug commands', hidden=True)
 async def debug(ctx):
     des = f"""
-    Debug commands of {bot.user.name}, Prefix: -\n
+    Debug commands of {bot_name}, Prefix: -\n
 
     > test: Sends a fixed message
 
@@ -207,7 +227,7 @@ async def debug(ctx):
 
     """
     embed = discord.Embed(
-                title=f"I'm {bot.user.name}, A Music Bot", 
+                title=f"I'm {bot_name}, A Music Bot", 
                 description=des, 
                 color=discord.Color.blue()
                 )
@@ -242,11 +262,12 @@ async def leave(ctx):
         for root, _, files in os.walk("songs", topdown=False):
             for file in files:
                 file_path = os.path.join(root, file)
+                
                 while True:
                     try:
                         os.remove(file_path)
                         break
-                    except:
+                    except FileNotFoundError:
                         continue
         
         os.rmdir("songs")
@@ -258,7 +279,6 @@ async def play(ctx, *, value: str = commands.parameter(description="URL, Name, N
 
     def keep_rolling():
         if len(songs) != 0:
-            voice = get(bot.voice_clients, guild=ctx.guild)
             channel = get(ctx.guild.text_channels, name=ctx.message.channel.name)
             file = songs[0]
             songs.pop(0)
@@ -272,19 +292,20 @@ async def play(ctx, *, value: str = commands.parameter(description="URL, Name, N
             
             try:
                 fut.result()
-            except:
+            except Exception:
                 pass
             
-            voice.play(discord.FFmpegPCMAudio(source=file[0]), after=lambda n : keep_rolling())
+            ctx.voice_client.play(discord.FFmpegPCMAudio(source=file[0]), after=lambda _: keep_rolling())
 
     try:
         server = ctx.message.guild
         voice_channel = server.voice_client 
+        
         if not voice_channel.is_playing():
             async with ctx.typing():
-                voice = get(bot.voice_clients, guild=ctx.guild)
                 file = await YTDLSource.from_url(track[0], loop=bot.loop)
-                voice.play(discord.FFmpegPCMAudio(source=file), after=lambda n: keep_rolling())
+                ctx.voice_client.play(discord.FFmpegPCMAudio(source=file), after=lambda _: keep_rolling())
+            
             if track[1] != '0':
                 embed = discord.Embed(
                         title='**Now playing:**',
@@ -313,19 +334,19 @@ async def play(ctx, *, value: str = commands.parameter(description="URL, Name, N
 @bot.command(name='local', description='Plays local audio files')
 async def local(ctx, *, value: str = commands.parameter(description=".mp3, .mp4, .mkv")):
     await join(ctx)
-    voice = get(bot.voice_clients, guild=ctx.guild)
     filename = value
-    voice.play(discord.FFmpegPCMAudio(source=filename))
+    ctx.voice_client.play(discord.FFmpegPCMAudio(source=filename))
 
 @bot.command(name='tts', description='Text To Speech')
 async def TTS(ctx, *, value: str):
     await join(ctx)
-    voice = get(bot.voice_clients, guild=ctx.guild)
     author = ctx.author
+    
     tts = gTTS(f"{author.global_name} dice: {value}", lang="es")
     filename = f"/tmp/{value.replace(' ', '_')}.mp3" if platform != "win32" else f"songs\\{value.replace(' ', '_')}.mp3"
     tts.save(filename)
-    voice.play(discord.FFmpegPCMAudio(filename))
+    
+    ctx.voice_client.play(discord.FFmpegPCMAudio(filename))
 
 @bot.command(name="song", description='Changes the status of the song', hidden=True)
 async def song(ctx, value : str):
@@ -405,7 +426,11 @@ token: str = f"TOKEN_{args.token.upper()}"
 
 async def main():
     try:
-        await bot.start(os.getenv(token))
+        tk = os.getenv(token)
+
+        if tk is not None:
+            await bot.start(tk)
+
     except asyncio.CancelledError:
         return None
 
